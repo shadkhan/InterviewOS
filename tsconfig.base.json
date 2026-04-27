@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@interviewos/shared": ["packages/shared/src/index.ts"],
+      "@interviewos/shared/*": ["packages/shared/src/*"],
+      "@interviewos/agents": ["packages/agents/src/index.ts"],
+      "@interviewos/agents/*": ["packages/agents/src/*"],
+      "@interviewos/database": ["packages/database/src/index.ts"],
+      "@interviewos/database/*": ["packages/database/src/*"]
+    }
+  }
+}

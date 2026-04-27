@@ -1,0 +1,36 @@
+{
+  "name": "@interviewos/database",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./client": {
+      "types": "./dist/client.d.ts",
+      "default": "./dist/client.js"
+    },
+    "./prisma/schema": {
+      "default": "./prisma/schema.prisma"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "db:generate": "prisma generate --schema prisma/schema.prisma",
+    "db:migrate": "prisma migrate dev --schema prisma/schema.prisma",
+    "lint": "echo \"No lint configured for database yet\"",
+    "typecheck": "tsc --noEmit",
+    "test": "echo \"No tests configured for database yet\""
+  },
+  "dependencies": {
+    "@prisma/client": "^6.0.1"
+  },
+  "devDependencies": {
+    "prisma": "^6.0.1",
+    "typescript": "^5.7.2"
+  }
+}

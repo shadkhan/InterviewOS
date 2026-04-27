@@ -1,0 +1,209 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum JobTargetStatus {
+  draft
+  pending
+  running
+  completed
+  failed
+}
+
+enum AgentRunStatus {
+  pending
+  running
+  completed
+  failed
+}
+
+model User {
+  id         String      @id @default(cuid())
+  email      String      @unique
+  name       String?
+  resumes    Resume[]
+  jobTargets JobTarget[]
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  @@index([createdAt])
+  @@map("users")
+}
+
+model Resume {
+  id            String      @id @default(cuid())
+  userId        String
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rawText       String
+  parsedProfile Json?
+  jobTargets    JobTarget[]
+  createdAt     DateTime    @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("resumes")
+}
+
+model JobTarget {
+  id                     String                  @id @default(cuid())
+  userId                 String
+  user                   User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  companyName            String
+  roleTitle              String
+  location               String?
+  seniority              String?
+  jobDescription         String
+  resumeId               String
+  resume                 Resume                  @relation(fields: [resumeId], references: [id], onDelete: Restrict)
+  status                 JobTargetStatus         @default(pending)
+  agentRuns              AgentRun[]
+  companyResearchReports CompanyResearchReport[]
+  jdAnalyses             JDAnalysis[]
+  salaryInsights         SalaryInsight[]
+  painPointReports       PainPointReport[]
+  interviewQuestions     InterviewQuestion[]
+  prepPlans              PrepPlan[]
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+
+  @@index([userId])
+  @@index([resumeId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("job_targets")
+}
+
+model AgentRun {
+  id          String         @id @default(cuid())
+  jobTargetId String
+  jobTarget   JobTarget      @relation(fields: [jobTargetId], references: [id], onDelete: Cascade)
+  status      AgentRunStatus @default(pending)
+  startedAt   DateTime?
+  completedAt DateTime?
+  errors      Json?
+  citations   Citation[]
+  createdAt   DateTime       @default(now())
+
+  @@index([jobTargetId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("agent_runs")
+}
+
+model CompanyResearchReport {
+  id          String    @id @default(cuid())
+  jobTargetId String
+  jobTarget   JobTarget @relation(fields: [jobTargetId], references: [id], onDelete: Cascade)
+  data        Json
+  citations   Json
+  createdAt   DateTime  @default(now())
+
+  @@index([jobTargetId])
+  @@index([createdAt])
+  @@map("company_research_reports")
+}
+
+model JDAnalysis {
+  id          String    @id @default(cuid())
+  jobTargetId String
+  jobTarget   JobTarget @relation(fields: [jobTargetId], references: [id], onDelete: Cascade)
+  data        Json
+  createdAt   DateTime  @default(now())
+
+  @@index([jobTargetId])
+  @@index([createdAt])
+  @@map("jd_analyses")
+}
+
+model SalaryInsight {
+  id              String    @id @default(cuid())
+  jobTargetId     String
+  jobTarget       JobTarget @relation(fields: [jobTargetId], references: [id], onDelete: Cascade)
+  data            Json
+  citations       Json
+  confidenceLevel String
+  createdAt       DateTime  @default(now())
+
+  @@index([jobTargetId])
+  @@index([createdAt])
+  @@map("salary_insights")
+}
+
+model PainPointReport {
+  id              String    @id @default(cuid())
+  jobTargetId     String
+  jobTarget       JobTarget @relation(fields: [jobTargetId], references: [id], onDelete: Cascade)
+  data            Json
+  confidenceLevel String
+  createdAt       DateTime  @default(now())
+
+  @@index([jobTargetId])
+  @@index([createdAt])
+  @@map("pain_point_reports")
+}
+
+model InterviewQuestion {
+  id                String        @id @default(cuid())
+  jobTargetId       String
+  jobTarget         JobTarget     @relation(fields: [jobTargetId], references: [id], onDelete: Cascade)
+  category          String
+  question          String
+  difficulty        String
+  interviewerIntent String
+  prepNotes         String
+  answerGuides      AnswerGuide[]
+  createdAt         DateTime      @default(now())
+
+  @@index([jobTargetId])
+  @@index([category])
+  @@index([createdAt])
+  @@map("interview_questions")
+}
+
+model AnswerGuide {
+  id                  String            @id @default(cuid())
+  interviewQuestionId String
+  interviewQuestion   InterviewQuestion @relation(fields: [interviewQuestionId], references: [id], onDelete: Cascade)
+  structure           String
+  sampleAnswer        String
+  resumeEvidence      Json
+  mistakesToAvoid     Json
+  improvementTips     Json
+  createdAt           DateTime          @default(now())
+
+  @@index([interviewQuestionId])
+  @@index([createdAt])
+  @@map("answer_guides")
+}
+
+model PrepPlan {
+  id             String    @id @default(cuid())
+  jobTargetId    String
+  jobTarget      JobTarget @relation(fields: [jobTargetId], references: [id], onDelete: Cascade)
+  priorityTopics Json
+  sevenDayPlan   Json
+  createdAt      DateTime  @default(now())
+
+  @@index([jobTargetId])
+  @@index([createdAt])
+  @@map("prep_plans")
+}
+
+model Citation {
+  id         String   @id @default(cuid())
+  url        String
+  title      String?
+  sourceType String
+  agentRunId String
+  agentRun   AgentRun @relation(fields: [agentRunId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@index([agentRunId])
+  @@index([createdAt])
+  @@map("citations")
+}

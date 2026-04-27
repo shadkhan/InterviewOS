@@ -1,0 +1,41 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+coverage/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Local planning and project notes
+AGENTS.md
+ARCHITECTURE.md
+Code-Prompts-roughideas.md
+DevPrompts.md
+Plan.txt
+PRD.md
+SECURITY.md
+SPECS.md
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# TypeScript
+*.tsbuildinfo
+
+# OS and editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
