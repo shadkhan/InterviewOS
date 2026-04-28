@@ -2,6 +2,7 @@ import { JDAnalysisSchema, type JDAnalysis } from "@interviewos/shared";
 import { promptLoader, type PromptLoader } from "../prompts";
 import type { LLMProvider } from "../providers";
 import type { InterviewPrepNode, InterviewPrepState } from "../state/interview-prep.state";
+import { appendNodeError } from "./node-error";
 
 const SHORT_JD_WARNING = "Job description is too short to analyze reliably";
 const VALIDATION_WARNING = "JD analysis returned invalid structured output";
@@ -92,6 +93,7 @@ const analyzeJD = async (
     return {
       jdAnalysis: createMinimalJDAnalysis(state),
       warnings: appendWarning(state.warnings, formatValidationWarning(error)),
+      errors: appendNodeError(state.errors, "jdAnalysis", error),
     };
   }
 };

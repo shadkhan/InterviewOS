@@ -2,6 +2,7 @@ import { ResumeProfileSchema, type ResumeProfile } from "@interviewos/shared";
 import { promptLoader, type PromptLoader } from "../prompts";
 import type { LLMProvider } from "../providers";
 import type { InterviewPrepNode, InterviewPrepState } from "../state/interview-prep.state";
+import { appendNodeError } from "./node-error";
 
 const SHORT_RESUME_WARNING = "Resume text is too short to parse reliably";
 const VALIDATION_WARNING = "Resume parser returned invalid structured output";
@@ -92,6 +93,7 @@ const parseResume = async (
     return {
       resumeProfile: createEmptyResumeProfile(),
       warnings: appendWarning(state.warnings, formatValidationWarning(error)),
+      errors: appendNodeError(state.errors, "resumeParser", error),
     };
   }
 };

@@ -1,127 +1,82 @@
 import assert from "node:assert/strict";
-import path from "node:path";
 import test from "node:test";
-import { MockLLMProvider, MockSearchProvider } from "../../providers";
-import { PromptLoader } from "../../prompts";
-import { createInitialInterviewPrepState } from "../../state";
+import { SalaryInsightSchema } from "@interviewos/shared";
+import { MockSearchProvider } from "../../providers";
 import { createSalaryResearchNode } from "../salary-research.node";
+import { createBaseState, loader, QueueLLMProvider, silentLogger, ThrowingLLMProvider, validSalaryInsight } from "./test-fixtures";
 
-const createBaseState = (location: string | undefined = "San Francisco, CA") =>
-  createInitialInterviewPrepState({
-    userId: "user_1",
-    projectId: "job_1",
-    companyName: "Example Co",
-    roleTitle: "Senior Backend Engineer",
-    seniority: "Senior",
-    location,
-    resumeText: "Senior backend engineer with distributed systems experience and measurable platform impact.",
-    jobDescription: "Build reliable platform APIs and improve observability.",
-  });
-
-const loader = new PromptLoader(path.resolve(process.cwd(), "../.."));
-const silentLogger = { log: () => undefined };
-
-test("researches salary and appends citations", async () => {
-  const searchResults = [
+const searchProvider = new MockSearchProvider({
+  defaultResults: [
     {
-      title: "Levels salary data",
-      url: "https://levels.fyi/company/example/salaries/software-engineer",
-      snippet: "Senior backend engineer compensation ranges from 180k to 260k.",
-      sourceType: "salary-platform" as const,
+      title: "Example salary data",
+      url: "https://salary.example.com/role",
+      snippet: "Senior backend engineer salary range.",
+      sourceType: "salary-platform",
     },
     {
-      title: "Glassdoor salary data",
-      url: "https://glassdoor.com/example-senior-backend-salary",
-      snippet: "Reported salaries for senior backend engineers at Example Co.",
-      sourceType: "salary-platform" as const,
+      title: "Example candidate salary",
+      url: "https://candidate.example.com/role",
+      snippet: "Candidate-reported compensation for backend roles.",
+      sourceType: "candidate-reported",
     },
     {
-      title: "LinkedIn salary data",
-      url: "https://linkedin.com/salary/example-senior-backend",
-      snippet: "Market salary estimates for senior backend engineers in San Francisco.",
-      sourceType: "salary-platform" as const,
+      title: "Example official careers",
+      url: "https://example.com/careers",
+      snippet: "Official careers page.",
+      sourceType: "official",
     },
-  ];
-  const salaryInsight = {
-    estimatedBaseSalaryRange: {
-      low: 180000,
-      high: 230000,
-      currency: "USD",
-    },
-    estimatedTotalCompRange: {
-      low: 220000,
-      high: 310000,
-      currency: "USD",
-    },
-    sourceBreakdown: ["Levels, Glassdoor, and LinkedIn salary sources were used."],
-    negotiationAdvice: ["Use the range as an estimate, not a guaranteed outcome."],
-    confidenceLevel: "medium" as const,
-    caveats: ["Salary varies by location, equity, bonus, and leveling."],
-    citations: [
-      {
-        title: "Levels salary data",
-        url: "https://levels.fyi/company/example/salaries/software-engineer",
-        sourceType: "salary-platform" as const,
-      },
-    ],
-  };
+  ],
+});
+
+test("happy path researches salary and matches schema", async () => {
   const node = createSalaryResearchNode({
-    llmProvider: new MockLLMProvider({ structuredResponse: salaryInsight }),
-    searchProvider: new MockSearchProvider({ defaultResults: searchResults }),
+    llmProvider: new QueueLLMProvider([validSalaryInsight]),
+    searchProvider,
     loader,
     logger: silentLogger,
   });
 
   const result = await node(createBaseState());
 
-  assert.equal(result.salaryInsight?.confidenceLevel, "medium");
-  assert.deepEqual(result.salaryInsight?.caveats, ["Salary varies by location, equity, bonus, and leveling."]);
+  assert.deepEqual(SalaryInsightSchema.parse(result.salaryInsight), validSalaryInsight);
   assert.equal(result.citations?.length, 3);
   assert.equal(result.warnings, undefined);
+  assert.equal(result.errors, undefined);
 });
 
-test("forces low confidence with fewer than three sources and warns without location", async () => {
-  const searchResults = [
-    {
-      title: "Glassdoor salary data",
-      url: "https://glassdoor.com/example-salary",
-      snippet: "Reported salaries for backend engineers.",
-      sourceType: "salary-platform" as const,
-    },
-    {
-      title: "Candidate reported salary data",
-      url: "https://example.com/candidate-reported-salary",
-      snippet: "Candidate-reported compensation estimate.",
-      sourceType: "candidate-reported" as const,
-    },
-  ];
-  const salaryInsight = {
-    estimatedBaseSalaryRange: {
-      low: 150000,
-      high: 210000,
-      currency: "USD",
-    },
-    estimatedTotalCompRange: {
-      low: 170000,
-      high: 250000,
-      currency: "USD",
-    },
-    sourceBreakdown: ["Two salary sources were found."],
-    negotiationAdvice: ["Treat this as an estimate."],
-    confidenceLevel: "high" as const,
-    caveats: [],
-    citations: [],
-  };
+test("empty location pushes a warning and does not crash", async () => {
   const node = createSalaryResearchNode({
-    llmProvider: new MockLLMProvider({ structuredResponse: salaryInsight }),
-    searchProvider: new MockSearchProvider({ defaultResults: searchResults }),
+    llmProvider: new QueueLLMProvider([validSalaryInsight]),
+    searchProvider,
     loader,
     logger: silentLogger,
   });
 
-  const result = await node(createBaseState(""));
+  const result = await node(createBaseState({ location: undefined }));
 
-  assert.equal(result.salaryInsight?.confidenceLevel, "low");
-  assert.ok((result.salaryInsight?.caveats.length ?? 0) > 0);
-  assert.deepEqual(result.warnings, ["Location not specified; salary estimate may be inaccurate"]);
+  assert.match(result.warnings?.[0] ?? "", /Location not specified/);
+  assert.ok(result.salaryInsight);
+});
+
+test("LLM failure is caught and added to state errors", async () => {
+  const node = createSalaryResearchNode({ llmProvider: new ThrowingLLMProvider(), searchProvider, loader, logger: silentLogger });
+
+  const result = await node(createBaseState());
+
+  assert.equal(result.errors?.at(-1)?.agent, "salaryResearch");
+  assert.match(result.errors?.at(-1)?.message ?? "", /LLM unavailable/);
+});
+
+test("schema validation failure is handled gracefully", async () => {
+  const node = createSalaryResearchNode({
+    llmProvider: new QueueLLMProvider([{ confidenceLevel: "high" }]),
+    searchProvider,
+    loader,
+    logger: silentLogger,
+  });
+
+  const result = await node(createBaseState());
+
+  assert.match(result.warnings?.at(-1) ?? "", /invalid structured output/);
+  assert.equal(result.errors?.at(-1)?.agent, "salaryResearch");
 });

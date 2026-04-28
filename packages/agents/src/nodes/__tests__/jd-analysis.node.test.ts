@@ -1,69 +1,47 @@
 import assert from "node:assert/strict";
-import path from "node:path";
 import test from "node:test";
-import { MockLLMProvider } from "../../providers";
-import { PromptLoader } from "../../prompts";
-import { createInitialInterviewPrepState } from "../../state";
+import { JDAnalysisSchema } from "@interviewos/shared";
 import { createJDAnalysisNode } from "../jd-analysis.node";
+import { createBaseState, loader, QueueLLMProvider, silentLogger, ThrowingLLMProvider, validJDAnalysis } from "./test-fixtures";
 
-const createBaseState = (jobDescription: string) =>
-  createInitialInterviewPrepState({
-    userId: "user_1",
-    projectId: "job_1",
-    companyName: "Example Co",
-    roleTitle: "Senior Backend Engineer",
-    seniority: "Senior",
-    resumeText: "Senior backend engineer with distributed systems experience and measurable platform impact.",
-    jobDescription,
-  });
+test("happy path analyzes a valid job description and matches schema", async () => {
+  const node = createJDAnalysisNode({ llmProvider: new QueueLLMProvider([validJDAnalysis]), loader, logger: silentLogger });
 
-const loader = new PromptLoader(path.resolve(process.cwd(), "../.."));
-const silentLogger = { log: () => undefined };
+  const result = await node(createBaseState());
 
-test("analyzes a valid job description with MockLLMProvider", async () => {
-  const analysis = {
-    roleSummary: "Senior backend role focused on distributed APIs and reliability.",
-    mustHaveSkills: ["Node.js", "PostgreSQL", "Distributed systems"],
-    niceToHaveSkills: ["Kafka"],
-    responsibilities: ["Design APIs", "Improve service reliability"],
-    toolsAndTechnologies: ["Node.js", "PostgreSQL", "Kafka"],
-    domainKnowledge: ["SaaS platforms"],
-    senioritySignals: ["Owns architecture decisions"],
-    hiddenExpectations: ["Inferred: mentor engineers based on seniority wording"],
-    screeningKeywords: ["backend", "distributed systems", "PostgreSQL"],
-    interviewFocusAreas: ["System design", "API design"],
-  };
-
-  const node = createJDAnalysisNode({
-    llmProvider: new MockLLMProvider({ structuredResponse: analysis }),
-    loader,
-    logger: silentLogger,
-  });
-
-  const result = await node(
-    createBaseState(
-      "We are hiring a Senior Backend Engineer to design and operate distributed APIs, improve reliability, work with Node.js and PostgreSQL, and collaborate with product teams on SaaS platform capabilities.",
-    ),
-  );
-
-  assert.deepEqual(result.jdAnalysis, analysis);
+  assert.deepEqual(JDAnalysisSchema.parse(result.jdAnalysis), validJDAnalysis);
   assert.equal(result.warnings, undefined);
+  assert.equal(result.errors, undefined);
 });
 
-test("returns minimal analysis and warning for short job description", async () => {
+test("empty input pushes a warning and does not crash", async () => {
+  const node = createJDAnalysisNode({ llmProvider: new QueueLLMProvider([validJDAnalysis]), loader, logger: silentLogger });
+
+  const result = await node(createBaseState({ jobDescription: "" }));
+
+  assert.match(result.warnings?.[0] ?? "", /too short/);
+  assert.equal(result.jdAnalysis?.roleSummary, "Minimal analysis for Senior Backend Engineer");
+});
+
+test("LLM failure is caught and added to state errors", async () => {
+  const node = createJDAnalysisNode({ llmProvider: new ThrowingLLMProvider(), loader, logger: silentLogger });
+
+  const result = await node(createBaseState());
+
+  assert.equal(result.errors?.at(-1)?.agent, "jdAnalysis");
+  assert.match(result.errors?.at(-1)?.message ?? "", /LLM unavailable/);
+  assert.equal(result.jdAnalysis?.roleSummary, "Minimal analysis for Senior Backend Engineer");
+});
+
+test("schema validation failure is handled gracefully", async () => {
   const node = createJDAnalysisNode({
-    llmProvider: new MockLLMProvider({
-      structuredResponse: {
-        roleSummary: "Should not be called",
-      },
-    }),
+    llmProvider: new QueueLLMProvider([{ roleSummary: "Missing fields" }]),
     loader,
     logger: silentLogger,
   });
 
-  const result = await node(createBaseState("Too short"));
+  const result = await node(createBaseState());
 
-  assert.equal(result.jdAnalysis?.roleSummary, "Minimal analysis for Senior Backend Engineer");
-  assert.deepEqual(result.jdAnalysis?.mustHaveSkills, []);
-  assert.deepEqual(result.warnings, ["Job description is too short to analyze reliably"]);
+  assert.match(result.warnings?.at(-1) ?? "", /invalid structured output/);
+  assert.equal(result.errors?.at(-1)?.agent, "jdAnalysis");
 });

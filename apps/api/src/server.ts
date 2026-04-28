@@ -1,5 +1,5 @@
 import Fastify from "fastify";
-import { registerAuthModule } from "./auth/auth.module";
+import { registerAppModule } from "./app.module";
 
 export const buildServer = async () => {
   const app = Fastify({
@@ -8,17 +8,7 @@ export const buildServer = async () => {
     },
   });
 
-  await registerAuthModule(app);
-
-  app.get(
-    "/health",
-    {
-      config: {
-        public: true,
-      },
-    },
-    async () => ({ status: "ok" }),
-  );
+  await registerAppModule(app);
 
   return app;
 };

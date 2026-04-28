@@ -3,6 +3,7 @@ import { z } from "zod";
 import { promptLoader, type PromptLoader } from "../prompts";
 import type { LLMProvider } from "../providers";
 import type { InterviewPrepNode, InterviewPrepState } from "../state/interview-prep.state";
+import { appendNodeError } from "./node-error";
 
 const MISSING_JD_ANALYSIS_WARNING = "JD analysis is required before generating interview questions";
 const MISSING_RESUME_PROFILE_WARNING = "Resume profile is required before generating interview questions";
@@ -96,6 +97,7 @@ const generateInterviewQuestions = async (
 
     return {
       warnings: appendWarning(state.warnings, formatValidationWarning(error)),
+      errors: appendNodeError(state.errors, "interviewQuestion", error),
     };
   }
 };

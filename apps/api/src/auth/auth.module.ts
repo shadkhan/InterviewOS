@@ -1,6 +1,5 @@
 import type { FastifyInstance, FastifyPluginAsync } from "fastify";
-import { ZodError } from "zod";
-import { AuthenticationError, AuthorizationError, publicRoute, type LoginRequestBody, type RefreshTokenRequestBody } from "./auth.types";
+import { publicRoute, type LoginRequestBody, type RefreshTokenRequestBody } from "./auth.types";
 import { AuthGuard } from "./auth.guard";
 import { AuthService, LoginRequestSchema, RefreshTokenRequestSchema } from "./auth.service";
 import { JwtStrategy } from "./jwt.strategy";
@@ -46,34 +45,5 @@ export const createAuthModule = (options: AuthModuleOptions = {}): FastifyPlugin
 };
 
 export const registerAuthModule = async (app: FastifyInstance, options: AuthModuleOptions = {}): Promise<void> => {
-  app.setErrorHandler((error, _request, reply) => {
-    if (error instanceof ZodError) {
-      return reply.status(400).send({
-        error: "Bad Request",
-        message: "Invalid request body.",
-        issues: error.issues,
-      });
-    }
-
-    if (error instanceof AuthenticationError) {
-      return reply.status(401).send({
-        error: "Unauthorized",
-        message: error.message,
-      });
-    }
-
-    if (error instanceof AuthorizationError) {
-      return reply.status(403).send({
-        error: "Forbidden",
-        message: error.message,
-      });
-    }
-
-    return reply.status(500).send({
-      error: "Internal Server Error",
-      message: "Unexpected server error.",
-    });
-  });
-
   await app.register(createAuthModule(options));
 };

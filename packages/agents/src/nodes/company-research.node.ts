@@ -2,6 +2,7 @@ import { CompanyResearchSchema, type Citation, type CompanyResearch } from "@int
 import { promptLoader, type PromptLoader } from "../prompts";
 import type { LLMProvider, SearchProvider, SearchResult } from "../providers";
 import type { InterviewPrepNode, InterviewPrepState } from "../state/interview-prep.state";
+import { appendNodeError } from "./node-error";
 
 const NO_RESULTS_WARNING = "No search results for company research";
 const VALIDATION_WARNING = "Company research returned invalid structured output";
@@ -102,6 +103,7 @@ const researchCompany = async (
     return {
       companyResearch: createMinimalCompanyResearch(state, "Company research failed before producing cited evidence."),
       warnings: appendWarning(state.warnings, formatValidationWarning(error)),
+      errors: appendNodeError(state.errors, "companyResearch", error),
     };
   }
 };

@@ -2,6 +2,7 @@ import { PainPointSchema, type Citation, type PainPoint } from "@interviewos/sha
 import { promptLoader, type PromptLoader } from "../prompts";
 import type { LLMProvider } from "../providers";
 import type { InterviewPrepNode, InterviewPrepState } from "../state/interview-prep.state";
+import { appendNodeError } from "./node-error";
 
 const MISSING_COMPANY_RESEARCH_WARNING = "Company research is required before pain point analysis";
 const MISSING_JD_ANALYSIS_WARNING = "JD analysis is required before pain point analysis";
@@ -96,6 +97,7 @@ const analyzePainPoints = async (
 
     return {
       warnings: appendWarning(state.warnings, formatValidationWarning(error)),
+      errors: appendNodeError(state.errors, "painPoint", error),
     };
   }
 };

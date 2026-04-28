@@ -22,7 +22,7 @@ import {
   type InterviewPrepStateUpdate,
 } from "../state/interview-prep.state";
 
-type WorkflowNodeName =
+export type WorkflowNodeName =
   | "intake"
   | "resumeParser"
   | "jdAnalysisStep"
@@ -42,6 +42,7 @@ type WorkflowNodeDefinition = {
 
 export interface RunInterviewPrepWorkflowOptions {
   reportProgress?: InterviewPrepProgressReporter;
+  nodeOverrides?: Partial<Record<WorkflowNodeName, InterviewPrepNode>>;
 }
 
 const intakeDefinition: WorkflowNodeDefinition = { name: "intake", node: intakeNode, progress: 10 };
@@ -67,17 +68,33 @@ export const runInterviewPrepWorkflow = async (
 };
 
 export const buildInterviewPrepWorkflow = (options: RunInterviewPrepWorkflowOptions = {}) => {
+  const definitions = applyNodeOverrides(
+    [
+      intakeDefinition,
+      resumeParserDefinition,
+      jdAnalysisDefinition,
+      companyResearchDefinition,
+      salaryResearchDefinition,
+      painPointDefinition,
+      interviewQuestionDefinition,
+      answerCoachDefinition,
+      prepPlanDefinition,
+      finalizeDefinition,
+    ],
+    options.nodeOverrides,
+  );
+
   return new StateGraph(InterviewPrepStateAnnotation)
-    .addNode("intake", createSafeWorkflowNode(intakeDefinition, options.reportProgress))
-    .addNode("resumeParser", createSafeWorkflowNode(resumeParserDefinition, options.reportProgress))
-    .addNode("jdAnalysisStep", createSafeWorkflowNode(jdAnalysisDefinition, options.reportProgress))
-    .addNode("companyResearchStep", createSafeWorkflowNode(companyResearchDefinition, options.reportProgress))
-    .addNode("salaryResearch", createSafeWorkflowNode(salaryResearchDefinition, options.reportProgress))
-    .addNode("painPoint", createSafeWorkflowNode(painPointDefinition, options.reportProgress))
-    .addNode("interviewQuestion", createSafeWorkflowNode(interviewQuestionDefinition, options.reportProgress))
-    .addNode("answerCoach", createSafeWorkflowNode(answerCoachDefinition, options.reportProgress))
-    .addNode("prepPlanStep", createSafeWorkflowNode(prepPlanDefinition, options.reportProgress))
-    .addNode("finalize", createSafeWorkflowNode(finalizeDefinition, options.reportProgress))
+    .addNode("intake", createSafeWorkflowNode(definitions.intake, options.reportProgress))
+    .addNode("resumeParser", createSafeWorkflowNode(definitions.resumeParser, options.reportProgress))
+    .addNode("jdAnalysisStep", createSafeWorkflowNode(definitions.jdAnalysisStep, options.reportProgress))
+    .addNode("companyResearchStep", createSafeWorkflowNode(definitions.companyResearchStep, options.reportProgress))
+    .addNode("salaryResearch", createSafeWorkflowNode(definitions.salaryResearch, options.reportProgress))
+    .addNode("painPoint", createSafeWorkflowNode(definitions.painPoint, options.reportProgress))
+    .addNode("interviewQuestion", createSafeWorkflowNode(definitions.interviewQuestion, options.reportProgress))
+    .addNode("answerCoach", createSafeWorkflowNode(definitions.answerCoach, options.reportProgress))
+    .addNode("prepPlanStep", createSafeWorkflowNode(definitions.prepPlanStep, options.reportProgress))
+    .addNode("finalize", createSafeWorkflowNode(definitions.finalize, options.reportProgress))
     .addEdge(START, "intake")
     .addEdge("intake", "resumeParser")
     .addEdge("resumeParser", "jdAnalysisStep")
@@ -90,6 +107,21 @@ export const buildInterviewPrepWorkflow = (options: RunInterviewPrepWorkflowOpti
     .addEdge("prepPlanStep", "finalize")
     .addEdge("finalize", END)
     .compile({ name: "interview-prep" });
+};
+
+const applyNodeOverrides = (
+  definitions: WorkflowNodeDefinition[],
+  overrides: RunInterviewPrepWorkflowOptions["nodeOverrides"] = {},
+): Record<WorkflowNodeName, WorkflowNodeDefinition> => {
+  return Object.fromEntries(
+    definitions.map((definition) => [
+      definition.name,
+      {
+        ...definition,
+        node: overrides[definition.name] ?? definition.node,
+      },
+    ]),
+  ) as Record<WorkflowNodeName, WorkflowNodeDefinition>;
 };
 
 const createSafeWorkflowNode = (

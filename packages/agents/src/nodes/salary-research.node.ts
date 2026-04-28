@@ -2,6 +2,7 @@ import { SalaryInsightSchema, type Citation, type SalaryInsight } from "@intervi
 import { promptLoader, type PromptLoader } from "../prompts";
 import type { LLMProvider, SearchProvider, SearchResult } from "../providers";
 import type { InterviewPrepNode, InterviewPrepState } from "../state/interview-prep.state";
+import { appendNodeError } from "./node-error";
 
 const NO_RESULTS_WARNING = "No search results for salary research";
 const MISSING_LOCATION_NOTE = "Location not specified; salary estimate may be inaccurate";
@@ -103,6 +104,7 @@ const researchSalary = async (
     return {
       salaryInsight: createMinimalSalaryInsight("Salary research failed before producing cited evidence."),
       warnings: appendWarning(state.warnings, formatValidationWarning(error)),
+      errors: appendNodeError(state.errors, "salaryResearch", error),
     };
   }
 };
