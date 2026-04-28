@@ -18,11 +18,15 @@
     "test": "tsx --test src/**/*.test.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.91.1",
+    "@google/generative-ai": "^0.24.1",
     "@interviewos/database": "workspace:*",
     "@interviewos/shared": "workspace:*",
     "@langchain/langgraph": "^0.2.44",
     "bullmq": "^5.34.2",
+    "groq-sdk": "^1.1.2",
     "ioredis": "^5.4.2",
+    "openai": "^6.34.0",
     "zod": "^3.24.1"
   },
   "devDependencies": {

@@ -207,3 +207,12 @@ model Citation {
   @@index([createdAt])
   @@map("citations")
 }
+
+
+model AppSettings {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+
+  @@map("app_settings")
+}

@@ -4,6 +4,7 @@ import { registerAuthModule, type AuthModuleOptions } from "./auth/auth.module";
 import { registerGlobalExceptionFilter } from "./exception-filter";
 import { registerJobTargetsModule } from "./job-targets/job-targets.module";
 import { registerReportsModule } from "./reports/reports.module";
+import { registerSettingsModule } from "./settings/settings.module";
 
 export interface AppModuleOptions {
   auth?: AuthModuleOptions;
@@ -19,6 +20,7 @@ export const registerAppModule = async (
   await registerJobTargetsModule(app);
   await registerAgentRunsModule(app);
   await registerReportsModule(app);
+  await registerSettingsModule(app);
 
   app.get(
     "/health",

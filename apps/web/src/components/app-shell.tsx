@@ -11,6 +11,9 @@ export const AppHeader = () => (
         <LinkButton href="/dashboard" variant="ghost">
           Dashboard
         </LinkButton>
+        <LinkButton href="/settings" variant="ghost">
+          Settings
+        </LinkButton>
         <LinkButton href="/job-targets/new" variant="secondary">
           New Target
         </LinkButton>

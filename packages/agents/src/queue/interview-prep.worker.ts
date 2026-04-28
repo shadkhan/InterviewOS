@@ -1,10 +1,12 @@
 import { prisma } from "@interviewos/database";
 import { Worker } from "bullmq";
+import { getActiveLLMProvider } from "../providers/default-provider";
 import { runInterviewPrepWorkflow } from "../workflows/interview-prep.workflow";
 import { INTERVIEW_PREP_QUEUE_NAME, createRedisConnection, getWorkerConcurrency } from "./queue.config";
 import type { InterviewPrepJob, InterviewPrepWorkflowRunner, SerializedJobError } from "./queue.types";
 
 const defaultWorkflowRunner: InterviewPrepWorkflowRunner = async (data, reportProgress) => {
+  const llmProvider = await getActiveLLMProvider();
   await runInterviewPrepWorkflow(
     {
       projectId: data.jobTargetId,
@@ -17,7 +19,7 @@ const defaultWorkflowRunner: InterviewPrepWorkflowRunner = async (data, reportPr
       seniority: data.seniority,
       interviewDate: data.interviewDate,
     },
-    { reportProgress },
+    { reportProgress, llmProvider },
   );
 };
 

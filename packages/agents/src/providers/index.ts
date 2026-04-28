@@ -1,3 +1,4 @@
+export * from "./default-provider";
 export * from "./llm.provider";
 export * from "./mock-llm.provider";
 export * from "./mock-search.provider";

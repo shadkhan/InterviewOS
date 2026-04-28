@@ -3,6 +3,14 @@ import type { AgentError } from "@interviewos/shared";
 import {
   answerCoachNode,
   companyResearchNode,
+  createAnswerCoachNode,
+  createCompanyResearchNode,
+  createInterviewQuestionNode,
+  createJDAnalysisNode,
+  createPainPointNode,
+  createPrepPlanNode,
+  createResumeParserNode,
+  createSalaryResearchNode,
   finalizeNode,
   intakeNode,
   interviewQuestionNode,
@@ -12,6 +20,8 @@ import {
   resumeParserNode,
   salaryResearchNode,
 } from "../nodes";
+import { promptLoader } from "../prompts";
+import type { LLMProvider } from "../providers";
 import type { InterviewPrepProgressReporter } from "../queue/queue.types";
 import {
   InterviewPrepStateAnnotation,
@@ -43,6 +53,7 @@ type WorkflowNodeDefinition = {
 export interface RunInterviewPrepWorkflowOptions {
   reportProgress?: InterviewPrepProgressReporter;
   nodeOverrides?: Partial<Record<WorkflowNodeName, InterviewPrepNode>>;
+  llmProvider?: LLMProvider;
 }
 
 const intakeDefinition: WorkflowNodeDefinition = { name: "intake", node: intakeNode, progress: 10 };
@@ -68,6 +79,15 @@ export const runInterviewPrepWorkflow = async (
 };
 
 export const buildInterviewPrepWorkflow = (options: RunInterviewPrepWorkflowOptions = {}) => {
+  const providerOverrides = options.llmProvider
+    ? buildProviderNodeOverrides(options.llmProvider)
+    : {};
+
+  const effectiveOverrides: Partial<Record<WorkflowNodeName, InterviewPrepNode>> = {
+    ...providerOverrides,
+    ...options.nodeOverrides,
+  };
+
   const definitions = applyNodeOverrides(
     [
       intakeDefinition,
@@ -81,7 +101,7 @@ export const buildInterviewPrepWorkflow = (options: RunInterviewPrepWorkflowOpti
       prepPlanDefinition,
       finalizeDefinition,
     ],
-    options.nodeOverrides,
+    effectiveOverrides,
   );
 
   return new StateGraph(InterviewPrepStateAnnotation)
@@ -109,9 +129,20 @@ export const buildInterviewPrepWorkflow = (options: RunInterviewPrepWorkflowOpti
     .compile({ name: "interview-prep" });
 };
 
+const buildProviderNodeOverrides = (llmProvider: LLMProvider): Partial<Record<WorkflowNodeName, InterviewPrepNode>> => ({
+  resumeParser: createResumeParserNode({ llmProvider, loader: promptLoader, logger: console }),
+  jdAnalysisStep: createJDAnalysisNode({ llmProvider, loader: promptLoader, logger: console }),
+  companyResearchStep: createCompanyResearchNode({ llmProvider, loader: promptLoader, logger: console }),
+  salaryResearch: createSalaryResearchNode({ llmProvider, loader: promptLoader, logger: console }),
+  painPoint: createPainPointNode({ llmProvider, loader: promptLoader, logger: console }),
+  interviewQuestion: createInterviewQuestionNode({ llmProvider, loader: promptLoader, logger: console }),
+  answerCoach: createAnswerCoachNode({ llmProvider, loader: promptLoader, logger: console }),
+  prepPlanStep: createPrepPlanNode({ llmProvider, loader: promptLoader, logger: console }),
+});
+
 const applyNodeOverrides = (
   definitions: WorkflowNodeDefinition[],
-  overrides: RunInterviewPrepWorkflowOptions["nodeOverrides"] = {},
+  overrides: Partial<Record<WorkflowNodeName, InterviewPrepNode>> = {},
 ): Record<WorkflowNodeName, WorkflowNodeDefinition> => {
   return Object.fromEntries(
     definitions.map((definition) => [

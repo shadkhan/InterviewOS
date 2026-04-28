@@ -35,6 +35,9 @@ importers:
       bullmq:
         specifier: ^5.34.2
         version: 5.76.2
+      dotenv:
+        specifier: ^17.4.2
+        version: 17.4.2
       fastify:
         specifier: ^5.2.1
         version: 5.8.5
@@ -91,6 +94,12 @@ importers:
 
   packages/agents:
     dependencies:
+      '@anthropic-ai/sdk':
+        specifier: ^0.91.1
+        version: 0.91.1(zod@3.25.76)
+      '@google/generative-ai':
+        specifier: ^0.24.1
+        version: 0.24.1
       '@interviewos/database':
         specifier: workspace:*
         version: link:../database
@@ -99,13 +108,19 @@ importers:
         version: link:../shared
       '@langchain/langgraph':
         specifier: ^0.2.44
-        version: 0.2.74(@langchain/core@0.3.80)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(zod-to-json-schema@3.25.2(zod@3.25.76))
+        version: 0.2.74(@langchain/core@0.3.80(openai@6.34.0(zod@3.25.76)))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(zod-to-json-schema@3.25.2(zod@3.25.76))
       bullmq:
         specifier: ^5.34.2
         version: 5.76.2
+      groq-sdk:
+        specifier: ^1.1.2
+        version: 1.1.2
       ioredis:
         specifier: ^5.4.2
         version: 5.10.1
+      openai:
+        specifier: ^6.34.0
+        version: 6.34.0(zod@3.25.76)
       zod:
         specifier: ^3.24.1
         version: 3.25.76
@@ -126,6 +141,9 @@ importers:
       prisma:
         specifier: ^6.0.1
         version: 6.19.3(typescript@5.9.3)
+      tsx:
+        specifier: ^4.19.2
+        version: 4.21.0
       typescript:
         specifier: ^5.7.2
         version: 5.9.3
@@ -148,6 +166,19 @@ packages:
   '@alloc/quick-lru@5.2.0':
     resolution: {integrity: sha512-UrcABB+4bUrFABwbluTIBErXwvbsU/V7TZWfmbgJfbkwiBuziS9gxdODUyuiecfdGQ85jglMW6juS3+z5TsKLw==}
     engines: {node: '>=10'}
+
+  '@anthropic-ai/sdk@0.91.1':
+    resolution: {integrity: sha512-LAmu761tSN9r66ixvmciswUj/ZC+1Q4iAfpedTfSVLeswRwnY3n2Nb6Tsk+cLPP28aLOPWeMgIuTuCcMC6W/iw==}
+    hasBin: true
+    peerDependencies:
+      zod: ^3.25.0 || ^4.0.0
+    peerDependenciesMeta:
+      zod:
+        optional: true
+
+  '@babel/runtime@7.29.2':
+    resolution: {integrity: sha512-JiDShH45zKHWyGe4ZNVRrCjBz8Nh9TMmZG1kh4QTK8hCBTWBi8Da+i7s1fJw7/lYpM4ccepSNfqzZ/QvABBi5g==}
+    engines: {node: '>=6.9.0'}
 
   '@cfworker/json-schema@4.1.1':
     resolution: {integrity: sha512-gAmrUZSGtKc3AiBL71iNWxDsyUC5uMaKKGdvzYsBoTW/xi42JQHl7eKV2OYzCUqvc+D2RCcf7EXY2iCyFIk6og==}
@@ -331,6 +362,10 @@ packages:
 
   '@fastify/proxy-addr@5.1.0':
     resolution: {integrity: sha512-INS+6gh91cLUjB+PVHfu1UqcB76Sqtpyp7bnL+FYojhjygvOPA9ctiD/JDKsyD9Xgu4hUhCSJBPig/w7duNajw==}
+
+  '@google/generative-ai@0.24.1':
+    resolution: {integrity: sha512-MqO+MLfM6kjxcKoy0p1wRzG3b4ZZXtPI+z2IE26UogS2Cm/XHO+7gGRBh6gcJsOiIVoH93UwKvW4HdgiOZCy9Q==}
+    engines: {node: '>=18.0.0'}
 
   '@ioredis/commands@1.5.1':
     resolution: {integrity: sha512-JH8ZL/ywcJyR9MmJ5BNqZllXNZQqQbnVZOqpPQqE1vHiFgAw4NHbvE0FOduNU8IX9babitBT46571OnPTT0Zcw==}
@@ -865,6 +900,10 @@ packages:
   graceful-fs@4.2.11:
     resolution: {integrity: sha512-RbJ5/jmFcNNCcDV5o9eTnBLJ/HszWV0P73bc+Ff4nS/rJj+YaS6IGyiOL0VoBYX+l1Wrl3k63h/KrH+nhJ0XvQ==}
 
+  groq-sdk@1.1.2:
+    resolution: {integrity: sha512-CZO0XUQQDhn43ri1+lZHxZKpb+bGutgTvFmCJtooexiitGmPqhm1hntOT3nCoaq07e+OpeokVnfUs0i/oQuUaQ==}
+    hasBin: true
+
   has-flag@4.0.0:
     resolution: {integrity: sha512-EykJT/Q1KjTWctppgIAgfSO0tKVuZUjhgMr17kqTumMl6Afv3EISleU7qZUzoXDFTAHTDC4NOoG/ZxU3EvlMPQ==}
     engines: {node: '>=8'}
@@ -917,6 +956,10 @@ packages:
 
   json-schema-ref-resolver@3.0.0:
     resolution: {integrity: sha512-hOrZIVL5jyYFjzk7+y7n5JDzGlU8rfWDuYyHwGa2WA8/pcmMHezp2xsVwxrebD/Q9t8Nc5DboieySDpCp4WG4A==}
+
+  json-schema-to-ts@3.1.1:
+    resolution: {integrity: sha512-+DWg8jCJG2TEnpy7kOm/7/AxaYoaRbjVB4LFZLySZlWn8exGs3A4OLJR966cVvU26N7X9TWxl+Jsw7dzAqKT6g==}
+    engines: {node: '>=16'}
 
   json-schema-traverse@1.0.0:
     resolution: {integrity: sha512-NM8/P9n3XjXhIZn1lLhkFaACTOURQXjWhV4BA/RnOv8xvgqtqpAX9IO4mRQxSx1Rlo4tqzeqb0sOlruaOy3dug==}
@@ -1052,6 +1095,18 @@ packages:
   on-exit-leak-free@2.1.2:
     resolution: {integrity: sha512-0eJJY6hXLGf1udHwfNftBqH+g73EU4B504nZeKpz1sYRKafAghwxEJunB2O7rDZkL4PGfsMVnTXZ2EjibbqcsA==}
     engines: {node: '>=14.0.0'}
+
+  openai@6.34.0:
+    resolution: {integrity: sha512-yEr2jdGf4tVFYG6ohmr3pF6VJuveP0EA/sS8TBx+4Eq5NT10alu5zg2dmxMXMgqpihRDQlFGpRt2XwsGj+Fyxw==}
+    hasBin: true
+    peerDependencies:
+      ws: ^8.18.0
+      zod: ^3.25 || ^4.0
+    peerDependenciesMeta:
+      ws:
+        optional: true
+      zod:
+        optional: true
 
   p-finally@1.0.0:
     resolution: {integrity: sha512-LICb2p9CB7FS+0eR1oqWnHhp0FljGLZCWBE9aix0Uye9W8LTQPwMTYVGWQWIw9RdQiDg4+epXQODwIYJtSJaow==}
@@ -1352,6 +1407,9 @@ packages:
     resolution: {integrity: sha512-/m8M+2BJUpoJdgAHoG+baCwBT+tf2VraSfkBgl0Y00qIWt41DJ8R5B8nsEw0I58YwF5IZH6z24/2TobDKnqSWw==}
     engines: {node: '>=12'}
 
+  ts-algebra@2.0.0:
+    resolution: {integrity: sha512-FPAhNPFMrkwz76P7cdjdmiShwMynZYN6SgOujD1urY4oNm80Ou9oMdmbR45LotcKOXoy7wSmHkRFE6Mxbrhefw==}
+
   ts-interface-checker@0.1.13:
     resolution: {integrity: sha512-Y/arvbn+rrz3JCKl9C4kVNfTfSm2/mEp5FSz5EsZSANGPSlQrpRI5M4PKF+mJnE52jOO90PnPSc3Ur3bTQw0gA==}
 
@@ -1399,6 +1457,14 @@ packages:
 snapshots:
 
   '@alloc/quick-lru@5.2.0': {}
+
+  '@anthropic-ai/sdk@0.91.1(zod@3.25.76)':
+    dependencies:
+      json-schema-to-ts: 3.1.1
+    optionalDependencies:
+      zod: 3.25.76
+
+  '@babel/runtime@7.29.2': {}
 
   '@cfworker/json-schema@4.1.1': {}
 
@@ -1513,6 +1579,8 @@ snapshots:
       '@fastify/forwarded': 3.0.1
       ipaddr.js: 2.3.0
 
+  '@google/generative-ai@0.24.1': {}
+
   '@ioredis/commands@1.5.1': {}
 
   '@jridgewell/gen-mapping@0.3.13':
@@ -1529,14 +1597,14 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
 
-  '@langchain/core@0.3.80':
+  '@langchain/core@0.3.80(openai@6.34.0(zod@3.25.76))':
     dependencies:
       '@cfworker/json-schema': 4.1.1
       ansi-styles: 5.2.0
       camelcase: 6.3.0
       decamelize: 1.2.0
       js-tiktoken: 1.0.21
-      langsmith: 0.3.87
+      langsmith: 0.3.87(openai@6.34.0(zod@3.25.76))
       mustache: 4.2.0
       p-queue: 6.6.2
       p-retry: 4.6.2
@@ -1549,27 +1617,27 @@ snapshots:
       - '@opentelemetry/sdk-trace-base'
       - openai
 
-  '@langchain/langgraph-checkpoint@0.0.18(@langchain/core@0.3.80)':
+  '@langchain/langgraph-checkpoint@0.0.18(@langchain/core@0.3.80(openai@6.34.0(zod@3.25.76)))':
     dependencies:
-      '@langchain/core': 0.3.80
+      '@langchain/core': 0.3.80(openai@6.34.0(zod@3.25.76))
       uuid: 10.0.0
 
-  '@langchain/langgraph-sdk@0.0.112(@langchain/core@0.3.80)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@langchain/langgraph-sdk@0.0.112(@langchain/core@0.3.80(openai@6.34.0(zod@3.25.76)))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@types/json-schema': 7.0.15
       p-queue: 6.6.2
       p-retry: 4.6.2
       uuid: 9.0.1
     optionalDependencies:
-      '@langchain/core': 0.3.80
+      '@langchain/core': 0.3.80(openai@6.34.0(zod@3.25.76))
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
-  '@langchain/langgraph@0.2.74(@langchain/core@0.3.80)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(zod-to-json-schema@3.25.2(zod@3.25.76))':
+  '@langchain/langgraph@0.2.74(@langchain/core@0.3.80(openai@6.34.0(zod@3.25.76)))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(zod-to-json-schema@3.25.2(zod@3.25.76))':
     dependencies:
-      '@langchain/core': 0.3.80
-      '@langchain/langgraph-checkpoint': 0.0.18(@langchain/core@0.3.80)
-      '@langchain/langgraph-sdk': 0.0.112(@langchain/core@0.3.80)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@langchain/core': 0.3.80(openai@6.34.0(zod@3.25.76))
+      '@langchain/langgraph-checkpoint': 0.0.18(@langchain/core@0.3.80(openai@6.34.0(zod@3.25.76)))
+      '@langchain/langgraph-sdk': 0.0.112(@langchain/core@0.3.80(openai@6.34.0(zod@3.25.76)))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       uuid: 10.0.0
       zod: 3.25.76
     optionalDependencies:
@@ -2039,6 +2107,8 @@ snapshots:
 
   graceful-fs@4.2.11: {}
 
+  groq-sdk@1.1.2: {}
+
   has-flag@4.0.0: {}
 
   hasown@2.0.3:
@@ -2091,9 +2161,14 @@ snapshots:
     dependencies:
       dequal: 2.0.3
 
+  json-schema-to-ts@3.1.1:
+    dependencies:
+      '@babel/runtime': 7.29.2
+      ts-algebra: 2.0.0
+
   json-schema-traverse@1.0.0: {}
 
-  langsmith@0.3.87:
+  langsmith@0.3.87(openai@6.34.0(zod@3.25.76)):
     dependencies:
       '@types/uuid': 10.0.0
       chalk: 4.1.2
@@ -2101,6 +2176,8 @@ snapshots:
       p-queue: 6.6.2
       semver: 7.7.4
       uuid: 10.0.0
+    optionalDependencies:
+      openai: 6.34.0(zod@3.25.76)
 
   light-my-request@6.6.0:
     dependencies:
@@ -2214,6 +2291,10 @@ snapshots:
   ohash@2.0.11: {}
 
   on-exit-leak-free@2.1.2: {}
+
+  openai@6.34.0(zod@3.25.76):
+    optionalDependencies:
+      zod: 3.25.76
 
   p-finally@1.0.0: {}
 
@@ -2495,6 +2576,8 @@ snapshots:
       is-number: 7.0.0
 
   toad-cache@3.7.0: {}
+
+  ts-algebra@2.0.0: {}
 
   ts-interface-checker@0.1.13: {}
 
