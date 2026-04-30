@@ -79,15 +79,16 @@ model JobTarget {
 }
 
 model AgentRun {
-  id          String         @id @default(cuid())
-  jobTargetId String
-  jobTarget   JobTarget      @relation(fields: [jobTargetId], references: [id], onDelete: Cascade)
-  status      AgentRunStatus @default(pending)
-  startedAt   DateTime?
-  completedAt DateTime?
-  errors      Json?
-  citations   Citation[]
-  createdAt   DateTime       @default(now())
+  id           String         @id @default(cuid())
+  jobTargetId  String
+  jobTarget    JobTarget      @relation(fields: [jobTargetId], references: [id], onDelete: Cascade)
+  status       AgentRunStatus @default(pending)
+  startedAt    DateTime?
+  completedAt  DateTime?
+  errors       Json?
+  nodeStatuses Json?
+  citations    Citation[]
+  createdAt    DateTime       @default(now())
 
   @@index([jobTargetId])
   @@index([status])

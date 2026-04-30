@@ -1,30 +1,39 @@
 import { z } from "zod";
+import { lenientString } from "./coerce";
 
-export const InterviewQuestionCategorySchema = z
-  .enum([
-    "recruiterScreen",
-    "behavioral",
-    "resumeDeepDive",
-    "technical",
-    "systemDesign",
-    "roleSpecificScenarios",
-    "companySpecific",
-    "salaryAndMotivation",
-    "questionsCandidateShouldAsk",
-  ])
-  .describe("Interview question category.");
+const ALLOWED_CATEGORIES = [
+  "recruiterScreen",
+  "behavioral",
+  "resumeDeepDive",
+  "technical",
+  "systemDesign",
+  "roleSpecificScenarios",
+  "companySpecific",
+  "salaryAndMotivation",
+  "questionsCandidateShouldAsk",
+] as const;
+type Category = (typeof ALLOWED_CATEGORIES)[number];
 
-export const QuestionDifficultySchema = z.enum(["easy", "medium", "hard"]).describe("Question difficulty level.");
+export const InterviewQuestionCategorySchema: z.ZodType<Category> = z.preprocess(
+  (v) => (typeof v === "string" && ALLOWED_CATEGORIES.includes(v as Category) ? v : "behavioral"),
+  z.enum(ALLOWED_CATEGORIES),
+) as z.ZodType<Category>;
 
-export const InterviewQuestionSchema = z
-  .object({
-    category: InterviewQuestionCategorySchema.describe("Category for the interview question."),
-    question: z.string().describe("Interview question text."),
-    difficulty: QuestionDifficultySchema.describe("Difficulty level for the question."),
-    interviewerIntent: z.string().describe("What the interviewer is likely testing with this question."),
-    prepNotes: z.string().describe("Preparation notes for answering the question well."),
-  })
-  .strict();
+const ALLOWED_DIFFICULTIES = ["easy", "medium", "hard"] as const;
+type Difficulty = (typeof ALLOWED_DIFFICULTIES)[number];
+
+export const QuestionDifficultySchema: z.ZodType<Difficulty> = z.preprocess(
+  (v) => (typeof v === "string" && ALLOWED_DIFFICULTIES.includes(v as Difficulty) ? v : "medium"),
+  z.enum(ALLOWED_DIFFICULTIES),
+) as z.ZodType<Difficulty>;
+
+export const InterviewQuestionSchema = z.object({
+  category: InterviewQuestionCategorySchema,
+  question: lenientString("Interview question text."),
+  difficulty: QuestionDifficultySchema,
+  interviewerIntent: lenientString("What the interviewer is likely testing with this question."),
+  prepNotes: lenientString("Preparation notes for answering the question well."),
+});
 
 export type InterviewQuestionCategory = z.infer<typeof InterviewQuestionCategorySchema>;
 export type QuestionDifficulty = z.infer<typeof QuestionDifficultySchema>;

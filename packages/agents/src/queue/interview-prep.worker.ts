@@ -1,13 +1,15 @@
 import { prisma } from "@interviewos/database";
 import { Worker } from "bullmq";
-import { getActiveLLMProvider } from "../providers/default-provider";
+import { getActiveLLMProvider, getActiveSearchProvider } from "../providers/default-provider";
 import { runInterviewPrepWorkflow } from "../workflows/interview-prep.workflow";
+import { persistWorkflowResults } from "./persist-results";
 import { INTERVIEW_PREP_QUEUE_NAME, createRedisConnection, getWorkerConcurrency } from "./queue.config";
 import type { InterviewPrepJob, InterviewPrepWorkflowRunner, SerializedJobError } from "./queue.types";
 
-const defaultWorkflowRunner: InterviewPrepWorkflowRunner = async (data, reportProgress) => {
+const defaultWorkflowRunner: InterviewPrepWorkflowRunner = async (data, reportProgress, reportNodeStatus) => {
   const llmProvider = await getActiveLLMProvider();
-  await runInterviewPrepWorkflow(
+  const searchProvider = getActiveSearchProvider();
+  return runInterviewPrepWorkflow(
     {
       projectId: data.jobTargetId,
       userId: data.userId,
@@ -19,7 +21,7 @@ const defaultWorkflowRunner: InterviewPrepWorkflowRunner = async (data, reportPr
       seniority: data.seniority,
       interviewDate: data.interviewDate,
     },
-    { reportProgress, llmProvider },
+    { reportProgress, reportNodeStatus, llmProvider, searchProvider },
   );
 };
 
@@ -43,15 +45,46 @@ export const createInterviewPrepWorker = (
         data: {
           status: "running",
           startedAt: new Date(),
+          nodeStatuses: {},
         },
       });
 
       await job.updateProgress(0);
 
+      // In-memory accumulator; we PUT the full map on each update to avoid
+      // races (Prisma's Json column doesn't support merge-patch).
+      const nodeStatuses: Record<string, unknown> = {};
+
       try {
-        await workflowRunner(job.data, async (progress) => {
-          await job.updateProgress(normalizeProgress(progress));
+        const finalState = await workflowRunner(
+          job.data,
+          async (progress) => {
+            await job.updateProgress(normalizeProgress(progress));
+          },
+          async (update) => {
+            nodeStatuses[update.name] = {
+              status: update.status,
+              startedAt: update.startedAt,
+              completedAt: update.completedAt,
+              durationMs: update.durationMs,
+              error: update.error,
+            };
+            await prisma.agentRun.update({
+              where: { id: agentRunId },
+              data: { nodeStatuses: nodeStatuses as object },
+            });
+          },
+        );
+
+        // Persist whatever the workflow produced before marking the run complete.
+        // Each section persists independently; a failure on one doesn't block others.
+        const jobTarget = await prisma.jobTarget.findUnique({
+          where: { id: job.data.jobTargetId },
+          select: { resumeId: true },
         });
+        if (jobTarget?.resumeId) {
+          await persistWorkflowResults(job.data.jobTargetId, agentRunId, jobTarget.resumeId, finalState);
+        }
 
         await job.updateProgress(100);
 

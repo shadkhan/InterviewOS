@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { PageShell } from "@/components/app-shell";
 import { Alert, Button, Card, Input, Label, Textarea } from "@/components/ui";
 import { apiFetch, rememberJobTarget } from "@/lib/api";
+import sampleJobTargets from "@/data/sample-job-targets.json";
 
 type CreateResponse = {
   jobTargetId: string;
@@ -27,6 +28,21 @@ export default function NewJobTargetPage() {
   });
 
   const update = (key: keyof typeof form, value: string) => setForm((current) => ({ ...current, [key]: value }));
+
+  const loadSample = (index: number) => {
+    if (index < 0) return;
+    const sample = sampleJobTargets[index];
+    if (!sample) return;
+    setForm({
+      companyName: sample.companyName,
+      roleTitle: sample.roleTitle,
+      location: sample.location,
+      seniority: sample.seniority,
+      interviewDate: sample.interviewDate,
+      jobDescription: sample.jobDescription,
+      resumeText: sample.resumeText,
+    });
+  };
 
   const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -75,6 +91,22 @@ export default function NewJobTargetPage() {
       </div>
       <Card className="mt-8 max-w-4xl">
         {error ? <div className="mb-5"><Alert title="Could not create target" message={error} /></div> : null}
+        <div className="mb-5 flex items-center gap-3 rounded-lg border border-dashed border-muted-foreground/30 bg-muted/30 p-3">
+          <span className="shrink-0 text-sm font-medium">Load sample data:</span>
+          <select
+            className="flex-1 rounded-md border border-input bg-background px-3 py-1.5 text-sm"
+            defaultValue=""
+            onChange={(event) => {
+              loadSample(Number(event.target.value));
+              event.target.value = "";
+            }}
+          >
+            <option value="" disabled>Select a sample to populate the form...</option>
+            {sampleJobTargets.map((sample, index) => (
+              <option key={sample.label} value={index}>{sample.label}</option>
+            ))}
+          </select>
+        </div>
         <form className="grid gap-5" onSubmit={onSubmit}>
           <div className="grid gap-4 md:grid-cols-2">
             <div>

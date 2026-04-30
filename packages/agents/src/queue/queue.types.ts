@@ -1,4 +1,5 @@
 import type { Job } from "bullmq";
+import type { InterviewPrepState } from "../state/interview-prep.state";
 
 export type InterviewPrepJobData = {
   jobTargetId: string;
@@ -18,10 +19,20 @@ export type InterviewPrepProgress = number;
 
 export type InterviewPrepProgressReporter = (progress: InterviewPrepProgress) => Promise<void>;
 
+export type InterviewPrepNodeStatusReporter = (update: {
+  name: string;
+  status: "pending" | "running" | "completed" | "failed";
+  startedAt?: string;
+  completedAt?: string;
+  durationMs?: number;
+  error?: string;
+}) => Promise<void>;
+
 export type InterviewPrepWorkflowRunner = (
   data: InterviewPrepJobData,
   reportProgress: InterviewPrepProgressReporter,
-) => Promise<void>;
+  reportNodeStatus?: InterviewPrepNodeStatusReporter,
+) => Promise<InterviewPrepState>;
 
 export type SerializedJobError = {
   name: string;

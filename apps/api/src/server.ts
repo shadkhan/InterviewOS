@@ -1,4 +1,5 @@
 import Fastify from "fastify";
+import cors from "@fastify/cors";
 import { registerAppModule } from "./app.module";
 
 export const buildServer = async () => {
@@ -6,6 +7,10 @@ export const buildServer = async () => {
     logger: {
       redact: ["req.headers.authorization", "accessToken", "refreshToken", "password"],
     },
+  });
+
+  await app.register(cors, {
+    origin: true,
   });
 
   await registerAppModule(app);

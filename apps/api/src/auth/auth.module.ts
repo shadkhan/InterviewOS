@@ -1,4 +1,5 @@
 import type { FastifyInstance, FastifyPluginAsync } from "fastify";
+import fp from "fastify-plugin";
 import { publicRoute, type LoginRequestBody, type RefreshTokenRequestBody } from "./auth.types";
 import { AuthGuard } from "./auth.guard";
 import { AuthService, LoginRequestSchema, RefreshTokenRequestSchema } from "./auth.service";
@@ -10,7 +11,7 @@ export interface AuthModuleOptions {
 }
 
 export const createAuthModule = (options: AuthModuleOptions = {}): FastifyPluginAsync => {
-  return async (app: FastifyInstance): Promise<void> => {
+  const plugin: FastifyPluginAsync = async (app: FastifyInstance): Promise<void> => {
     const jwtStrategy = options.jwtStrategy ?? new JwtStrategy();
     const authService = options.authService ?? new AuthService({ jwtStrategy });
     const authGuard = new AuthGuard(jwtStrategy);
@@ -42,6 +43,8 @@ export const createAuthModule = (options: AuthModuleOptions = {}): FastifyPlugin
       }),
     );
   };
+
+  return fp(plugin, { name: "auth-module" });
 };
 
 export const registerAuthModule = async (app: FastifyInstance, options: AuthModuleOptions = {}): Promise<void> => {

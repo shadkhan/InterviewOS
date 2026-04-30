@@ -1,6 +1,7 @@
-import { constants } from "node:fs";
+import { constants, existsSync } from "node:fs";
 import { access, readFile } from "node:fs/promises";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 export type PromptVariables = Record<string, string | number | boolean | null | undefined>;
 
@@ -13,10 +14,26 @@ export class PromptNotFoundError extends Error {
   }
 }
 
+const findMonorepoRoot = (): string => {
+  if (process.env.MONOREPO_ROOT) return process.env.MONOREPO_ROOT;
+
+  // Walk up to find pnpm-workspace.yaml (the only reliable workspace-root marker)
+  let current = path.dirname(fileURLToPath(import.meta.url));
+  for (let i = 0; i < 8; i++) {
+    if (existsSync(path.join(current, "pnpm-workspace.yaml"))) {
+      return current;
+    }
+    const parent = path.dirname(current);
+    if (parent === current) break;
+    current = parent;
+  }
+  return process.cwd();
+};
+
 export class PromptLoader {
   private readonly cache = new Map<string, string>();
 
-  constructor(private readonly monorepoRoot = process.cwd()) {}
+  constructor(private readonly monorepoRoot = findMonorepoRoot()) {}
 
   async loadSystemPrompt(name: string, variables: PromptVariables = {}): Promise<string> {
     return this.loadPrompt("system", name, variables);

@@ -1,5 +1,7 @@
 import { InterviewQuestionSchema, type InterviewQuestion } from "@interviewos/shared";
-import { z } from "zod";
+import { z, type ZodType } from "zod";
+
+type InterviewQuestionResult = { questions: InterviewQuestion[] };
 import { promptLoader, type PromptLoader } from "../prompts";
 import type { LLMProvider } from "../providers";
 import type { InterviewPrepNode, InterviewPrepState } from "../state/interview-prep.state";
@@ -12,11 +14,16 @@ const MISSING_PAIN_POINT_REPORT_WARNING = "Pain point report is required before 
 const VALIDATION_WARNING = "Interview question generation returned invalid structured output";
 const UNCONFIGURED_LLM_WARNING = "Interview question LLM provider is not configured";
 
-const InterviewQuestionResultSchema = z
-  .object({
-    questions: z.array(InterviewQuestionSchema),
-  })
-  .strict();
+const InterviewQuestionResultSchema: ZodType<InterviewQuestionResult> = z.preprocess(
+  (val) => {
+    // Accept either `{questions: [...]}` or a bare array `[...]`
+    if (Array.isArray(val)) return { questions: val };
+    return val;
+  },
+  z.object({
+    questions: z.array(InterviewQuestionSchema).min(1, "LLM returned no interview questions"),
+  }),
+) as ZodType<InterviewQuestionResult>;
 
 export interface InterviewQuestionNodeOptions {
   llmProvider?: LLMProvider;

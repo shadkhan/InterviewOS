@@ -3,7 +3,7 @@ import { prisma } from "@interviewos/database";
 import type { CreateJobTargetDto } from "./dto/create-job-target.dto";
 import { NotFoundError, PersistenceError, RateLimitError } from "../http-errors";
 
-const MAX_JOB_TARGETS_PER_HOUR = 5;
+const MAX_JOB_TARGETS_PER_HOUR = process.env.NODE_ENV === "production" ? 5 : 100;
 
 export class JobTargetsService {
   async create(userId: string, input: CreateJobTargetDto) {

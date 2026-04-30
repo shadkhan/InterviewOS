@@ -1,8 +1,28 @@
-import { createInterviewPrepQueue } from "@interviewos/agents";
+import { createInterviewPrepQueue, retryNode, type RetryProviderName } from "@interviewos/agents";
 import { prisma } from "@interviewos/database";
 import { NotFoundError, PersistenceError } from "../http-errors";
 
+type RetryableNode =
+  | "resumeParser"
+  | "jdAnalysisStep"
+  | "companyResearchStep"
+  | "salaryResearch"
+  | "painPoint"
+  | "interviewQuestion"
+  | "answerCoach"
+  | "prepPlanStep";
+
 export class AgentRunsService {
+  async retryNode(userId: string, id: string, node: RetryableNode, provider?: RetryProviderName) {
+    const agentRun = await this.findRunRecordForUser(userId, id);
+    return retryNode({
+      jobTargetId: agentRun.jobTargetId,
+      agentRunId: agentRun.id,
+      node,
+      provider,
+    });
+  }
+
   async getRunForUser(userId: string, id: string) {
     const agentRun = await this.findRunRecordForUser(userId, id);
     const progress = await this.getQueueProgress(id, agentRun.status);
@@ -15,6 +35,7 @@ export class AgentRunsService {
       startedAt: agentRun.startedAt,
       completedAt: agentRun.completedAt,
       createdAt: agentRun.createdAt,
+      nodeStatuses: agentRun.nodeStatuses ?? {},
     };
   }
 
@@ -45,6 +66,7 @@ export class AgentRunsService {
           startedAt: true,
           completedAt: true,
           errors: true,
+          nodeStatuses: true,
           createdAt: true,
         },
       });

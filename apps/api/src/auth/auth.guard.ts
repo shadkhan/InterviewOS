@@ -6,6 +6,15 @@ export class AuthGuard {
   constructor(private readonly jwtStrategy: JwtStrategy) {}
 
   preHandler: AuthPreHandler = async (request: FastifyRequest, _reply: FastifyReply): Promise<void> => {
+    // Development mode: bypass all authentication
+    if (process.env.NODE_ENV !== "production") {
+      request.user = {
+        userId: "local-dev-user",
+        email: "dev@local",
+      };
+      return;
+    }
+
     if (request.routeOptions.config?.public === true) {
       return;
     }

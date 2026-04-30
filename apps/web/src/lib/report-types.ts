@@ -95,6 +95,16 @@ export type JobTargetReport = {
   citations: ReportCitation[];
 };
 
+export type NodeRunStatus = "pending" | "running" | "completed" | "failed";
+
+export type NodeStatusEntry = {
+  status: NodeRunStatus;
+  startedAt?: string;
+  completedAt?: string;
+  durationMs?: number;
+  error?: string;
+};
+
 export type AgentRunStatus = {
   id: string;
   jobTargetId: string;
@@ -103,4 +113,5 @@ export type AgentRunStatus = {
   startedAt: string | null;
   completedAt: string | null;
   createdAt: string;
+  nodeStatuses?: Record<string, NodeStatusEntry>;
 };

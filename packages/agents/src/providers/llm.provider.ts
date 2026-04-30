@@ -175,9 +175,15 @@ export class GroqLLMProvider extends BaseLLMProvider {
   }
 
   override async generateStructured<T>(messages: ChatMessage[], schema: ZodSchema<T>, options?: GenerateOptions): Promise<T> {
+    // Groq's response_format=json_object requires the word "json" to appear
+    // somewhere in the messages. We append a JSON instruction to the last
+    // user message if none of the messages already mention json.
+    const simpleMessages = toSimpleMessages(messages);
+    const messagesWithJson = ensureJsonMention(simpleMessages);
+
     const response = await this.client.chat.completions.create({
       model: options?.model ?? this.model,
-      messages: toSimpleMessages(messages) as Groq.Chat.ChatCompletionMessageParam[],
+      messages: messagesWithJson as Groq.Chat.ChatCompletionMessageParam[],
       ...(options?.temperature !== undefined && { temperature: options.temperature }),
       ...(options?.maxTokens !== undefined && { max_tokens: options.maxTokens }),
       response_format: { type: "json_object" },
@@ -185,6 +191,18 @@ export class GroqLLMProvider extends BaseLLMProvider {
 
     return this.parseAndValidate(response.choices[0]?.message.content ?? "{}", schema);
   }
+}
+
+const JSON_INSTRUCTION =
+  "\n\nRespond with valid JSON only. Do not include markdown code fences, explanations, or any text outside the JSON object.";
+
+function ensureJsonMention(messages: SimpleChatMessage[]): SimpleChatMessage[] {
+  if (messages.some((m) => m.content.toLowerCase().includes("json"))) {
+    return messages;
+  }
+  const last = messages.at(-1);
+  if (!last || last.role !== "user") return messages;
+  return [...messages.slice(0, -1), { role: "user" as const, content: last.content + JSON_INSTRUCTION }];
 }
 
 // --- Gemini ---
