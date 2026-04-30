@@ -55,9 +55,40 @@ function appendJsonInstruction(messages: AnthropicChatMessage[]): AnthropicChatM
   return [...messages.slice(0, -1), { role: "user" as const, content: last.content + ANTHROPIC_JSON_INSTRUCTION }];
 }
 
-function stripMarkdownFences(text: string): string {
-  const match = text.trim().match(/^```(?:json)?\s*\n?([\s\S]*?)\n?```$/);
-  return match ? (match[1] ?? "").trim() : text.trim();
+// Robust JSON extractor that handles:
+// - pure JSON ("{...}" or "[...]")
+// - markdown code fences ("```json\n{...}\n```"), including missing closing
+//   fence (e.g. when a response is truncated by max_tokens)
+// - JSON embedded in surrounding prose ("Here is the JSON: {...} Let me know...")
+export function extractJson(text: string): string {
+  const trimmed = text.trim();
+
+  if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
+    return trimmed;
+  }
+
+  // Opening markdown fence with optional closing fence (closing may be absent
+  // if the response was truncated mid-stream).
+  const fenceMatch = trimmed.match(/^```(?:json|JSON)?\s*\n?([\s\S]*?)(?:\n?```\s*$|$)/);
+  if (fenceMatch) {
+    const inner = (fenceMatch[1] ?? "").trim();
+    if (inner.startsWith("{") || inner.startsWith("[")) return inner;
+  }
+
+  // Last resort: extract the largest brace-delimited substring from prose.
+  const firstBrace = trimmed.indexOf("{");
+  const lastBrace = trimmed.lastIndexOf("}");
+  if (firstBrace !== -1 && lastBrace > firstBrace) {
+    return trimmed.substring(firstBrace, lastBrace + 1);
+  }
+
+  const firstBracket = trimmed.indexOf("[");
+  const lastBracket = trimmed.lastIndexOf("]");
+  if (firstBracket !== -1 && lastBracket > firstBracket) {
+    return trimmed.substring(firstBracket, lastBracket + 1);
+  }
+
+  return trimmed;
 }
 
 // --- base class ---
@@ -66,7 +97,7 @@ export abstract class BaseLLMProvider implements LLMProvider {
   abstract generate(messages: ChatMessage[], options?: GenerateOptions): Promise<string>;
 
   protected parseAndValidate<T>(rawResponse: string, schema: ZodSchema<T>): T {
-    const cleaned = stripMarkdownFences(rawResponse);
+    const cleaned = extractJson(rawResponse);
     let parsed: unknown;
 
     try {
@@ -287,6 +318,11 @@ export class GeminiLLMProvider extends BaseLLMProvider {
 // --- Anthropic ---
 
 const DEFAULT_ANTHROPIC_MODEL = "claude-haiku-4-5";
+// Interview-prep agents (especially the question bank and prep plan) generate
+// large structured outputs. The previous 4096 default truncated responses
+// mid-stream, producing invalid JSON. Claude Haiku 4.5 supports 64K output
+// tokens, so 16K is well within limits and matches realistic agent output sizes.
+const DEFAULT_ANTHROPIC_MAX_TOKENS = 16384;
 
 export class AnthropicLLMProvider extends BaseLLMProvider {
   private readonly client: Anthropic;
@@ -317,7 +353,7 @@ export class AnthropicLLMProvider extends BaseLLMProvider {
 
     const response = await this.client.messages.create({
       model,
-      max_tokens: options?.maxTokens ?? 4096,
+      max_tokens: options?.maxTokens ?? DEFAULT_ANTHROPIC_MAX_TOKENS,
       ...(system.length > 0 && { system }),
       messages: chatMessages,
       ...(!this.isOpus47(model) && options?.temperature !== undefined && { temperature: options.temperature }),
@@ -333,7 +369,7 @@ export class AnthropicLLMProvider extends BaseLLMProvider {
 
     const response = await this.client.messages.create({
       model,
-      max_tokens: options?.maxTokens ?? 4096,
+      max_tokens: options?.maxTokens ?? DEFAULT_ANTHROPIC_MAX_TOKENS,
       ...(system.length > 0 && { system }),
       messages: messagesWithJson,
       ...(!this.isOpus47(model) && options?.temperature !== undefined && { temperature: options.temperature }),

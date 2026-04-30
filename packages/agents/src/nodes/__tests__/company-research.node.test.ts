@@ -51,8 +51,10 @@ test("LLM failure is caught and added to state errors", async () => {
 });
 
 test("schema validation failure is handled gracefully", async () => {
+  // Pass a non-object so the outer z.object schema rejects it. Field-level
+  // lenient preprocessors coerce most partial objects into validity.
   const node = createCompanyResearchNode({
-    llmProvider: new QueueLLMProvider([{ companySummary: "Missing fields" }]),
+    llmProvider: new QueueLLMProvider(["NOT_AN_OBJECT"]),
     searchProvider,
     loader,
     logger: silentLogger,

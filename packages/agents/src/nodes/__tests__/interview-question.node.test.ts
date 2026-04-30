@@ -41,8 +41,12 @@ test("LLM failure is caught and added to state errors", async () => {
 });
 
 test("schema validation failure is handled gracefully", async () => {
+  // Pass a non-object/non-array so the outer InterviewQuestionResultSchema
+  // (which preprocesses arrays into {questions: [...]} but otherwise expects
+  // an object) rejects it. Field-level lenient preprocessors coerce most
+  // partial objects into validity.
   const node = createInterviewQuestionNode({
-    llmProvider: new QueueLLMProvider([{ questions: [{ question: "Missing fields" }] }]),
+    llmProvider: new QueueLLMProvider(["NOT_AN_OBJECT"]),
     loader,
     logger: silentLogger,
   });

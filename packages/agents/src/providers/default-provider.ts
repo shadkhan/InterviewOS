@@ -7,12 +7,16 @@ import {
 } from "./llm.provider";
 import { FallbackLLMProvider, type NamedLLMProvider } from "./fallback-llm.provider";
 import { LoggedLLMProvider, LoggedSearchProvider } from "./logged-providers";
+import { RepairingLLMProvider } from "./repairing-llm.provider";
 import { RetryingLLMProvider } from "./retrying-llm.provider";
 import { ExaSearchProvider, SerpApiSearchProvider, TavilySearchProvider } from "./search.provider";
 import type { LLMProvider, SearchProvider } from "./provider.types";
 
+// Layer order, outer to inner: Repairing → Logged → Retrying → raw provider.
+// Each repair attempt produces its own Logged entry, and transient-error
+// backoff happens within a single attempt so repair progress isn't lost.
 const wrapLLM = (inner: LLMProvider, name: string): LLMProvider =>
-  new LoggedLLMProvider(new RetryingLLMProvider(inner), name);
+  new RepairingLLMProvider(new LoggedLLMProvider(new RetryingLLMProvider(inner), name));
 
 type ProviderName = "gemini" | "groq" | "anthropic" | "openai";
 

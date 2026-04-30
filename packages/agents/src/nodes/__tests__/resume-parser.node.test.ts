@@ -42,8 +42,11 @@ test("LLM failure is caught and added to state errors", async () => {
 });
 
 test("schema validation failure is handled gracefully", async () => {
+  // Pass a non-object so the outer z.object schema rejects it. The schema's
+  // lenient field preprocessors coerce most partial objects into validity, so
+  // a string at the top level is the cleanest way to trigger a real error.
   const node = createResumeParserNode({
-    llmProvider: new QueueLLMProvider([{ currentTitle: "Missing fields" }]),
+    llmProvider: new QueueLLMProvider(["NOT_AN_OBJECT"]),
     loader,
     logger: silentLogger,
   });

@@ -1,20 +1,16 @@
 import type { ZodSchema } from "zod";
 import type { ChatMessage, GenerateOptions, LLMProvider } from "./provider.types";
-import { StructuredOutputParseError, StructuredOutputValidationError } from "./provider.types";
 
 export interface NamedLLMProvider {
   name: string;
   provider: LLMProvider;
 }
 
-const shouldFallback = (error: unknown): boolean => {
-  // Don't fallback on validation/parse errors — they're a model-output problem,
-  // not an availability problem. Fallback on everything else (auth, rate limit,
-  // network, server errors).
-  if (error instanceof StructuredOutputValidationError) return false;
-  if (error instanceof StructuredOutputParseError) return false;
-  return true;
-};
+// Fall back on every error. Validation/parse errors used to be excluded, but
+// each provider is now wrapped in RepairingLLMProvider — so if a structured
+// error reaches here, it means repair has already been exhausted on this
+// provider, and a different model may well succeed.
+const shouldFallback = (_error: unknown): boolean => true;
 
 export class FallbackLLMProvider implements LLMProvider {
   constructor(private readonly providers: NamedLLMProvider[]) {
@@ -45,7 +41,7 @@ export class FallbackLLMProvider implements LLMProvider {
           throw error;
         }
         const message = error instanceof Error ? error.message : String(error);
-        console.log(`[Fallback] ${name}.${label} failed (${message.substring(0, 100)}). Trying next provider...`);
+        console.log(`[Fallback] ${name}.${label} failed (${message.substring(0, 200)}). Trying next provider...`);
       }
     }
     throw lastError;
