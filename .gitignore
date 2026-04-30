@@ -14,16 +14,6 @@ coverage/
 .env.*
 !.env.example
 
-# Local planning and project notes
-AGENTS.md
-ARCHITECTURE.md
-Code-Prompts-roughideas.md
-DevPrompts.md
-Plan.txt
-PRD.md
-SECURITY.md
-SPECS.md
-content/
 
 # Logs
 *.log
